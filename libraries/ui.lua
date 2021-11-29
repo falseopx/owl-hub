@@ -150,6 +150,10 @@ function OwlLib.Content:Ripple(btn)
 	end)
 end;
 
+function OwlLib:notif(text)
+    popup:new(text);
+end
+
 function OwlLib.Content:initBtnEffect(btn)
 	local btnHover = tweenService:Create(btn, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.85});
 	local btnHover1 = tweenService:Create(btn, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 1});
@@ -218,76 +222,76 @@ function OwlLib:new(title)
     return self;
 end;
 
-function OwlLib.Content:newBtn(title, callback, noToggle)
+function OwlLib.Content:newBtn(title, callback)
     self:Resize(self.bodyFrame);
+    local btn = game:GetObjects("rbxassetid://4531209476")[1];
+    btn.Parent = self.bodyFrame;
+    btn.titleLabel.Text = title;
+    btn.titleLabel.Size = newUDim2(0, btn.titleLabel.TextBounds.X, 1, 0);
+    btn.Size = newUDim2(0, btn.titleLabel.Size.X.Offset + 17, 0, 30);
 
-    if not noToggle then
-        local enabled = config[title] and true or false;
-        if enabled then
-            callback(enabled);
-            popup:new("Enabled " .. title);
-        end;
-        
-        local btn = game:GetObjects("rbxassetid://4531129509")[1];
-        btn.Parent = self.bodyFrame;
-        btn.titleLabel.Text = title;
-        btn.titleLabel.Size = newUDim2(0, btn.titleLabel.TextBounds.X, 1, 0);
-        btn.Size = newUDim2(0, btn.titleLabel.Size.X.Offset + 50, 0, 30);
+    self:initBtnEffect(btn);
 
-        self:initBtnEffect(btn);
+    btn.MouseButton1Click:Connect(function()
+        self:Ripple(btn);
+        callback();
+        popup:new("Enabled " .. title);
+    end);
 
-        local toggle = {
-            [true] = fromRGB(0, 194, 94),
-            [false] = fromRGB(180, 0, 0)
-        };
-
-        tweenService:Create(btn.statusFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = toggle[enabled]}):Play();
-
-        btn.MouseButton1Click:Connect(function()
-            self:Ripple(btn);
-            enabled = not enabled;
-            config[title] = enabled;
-            saveConfig();
-            tweenService:Create(btn.statusFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = toggle[enabled]}):Play();
-            callback(enabled);
-            popup:new((enabled and "Enabled " or "Disabled ") .. title);
-        end);
-
-        return {
-            Set = function(self, bool) 
-                enabled = bool;
-                if not noToggle then
-                    config[title] = enabled;
-                    saveConfig();
-                    tweenService:Create(btn.statusFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = toggle[enabled]}):Play();
-                    callback(enabled);
-                    popup:new((enabled and "Enabled " or "Disabled ") .. title);
-                end;
-            end;
-        };
-    elseif noToggle then
-        local btn = game:GetObjects("rbxassetid://4531209476")[1];
-        btn.Parent = self.bodyFrame;
-        btn.titleLabel.Text = title;
-        btn.titleLabel.Size = newUDim2(0, btn.titleLabel.TextBounds.X, 1, 0);
-        btn.Size = newUDim2(0, btn.titleLabel.Size.X.Offset + 17, 0, 30);
-
-        self:initBtnEffect(btn);
-
-        btn.MouseButton1Click:Connect(function()
-            self:Ripple(btn);
+    return {
+        Fire = function(self) 
             callback();
             popup:new("Enabled " .. title);
-        end);
-
-        return {
-            Fire = function(self) 
-                callback();
-                popup:new("Enabled " .. title);
-            end;
-        };
-    end;
+        end;
+    };
 end;
+
+function OwlLib.Content:newToggle(title, callback)
+    self:Resize(self.bodyFrame);
+    local enabled = config[title] and true or false;
+    if enabled then
+        callback(enabled);
+        popup:new("Enabled " .. title);
+    end;
+    
+    local btn = game:GetObjects("rbxassetid://4531129509")[1];
+    btn.Parent = self.bodyFrame;
+    btn.titleLabel.Text = title;
+    btn.titleLabel.Size = newUDim2(0, btn.titleLabel.TextBounds.X, 1, 0);
+    btn.Size = newUDim2(0, btn.titleLabel.Size.X.Offset + 50, 0, 30);
+
+    self:initBtnEffect(btn);
+
+    local toggle = {
+        [true] = fromRGB(0, 194, 94),
+        [false] = fromRGB(180, 0, 0)
+    };
+
+    tweenService:Create(btn.statusFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = toggle[enabled]}):Play();
+
+    btn.MouseButton1Click:Connect(function()
+        self:Ripple(btn);
+        enabled = not enabled;
+        config[title] = enabled;
+        saveConfig();
+        tweenService:Create(btn.statusFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = toggle[enabled]}):Play();
+        callback(enabled);
+        popup:new((enabled and "Enabled " or "Disabled ") .. title);
+    end);
+
+    return {
+        Set = function(self, bool) 
+            enabled = bool;
+            if not noToggle then
+                config[title] = enabled;
+                saveConfig();
+                tweenService:Create(btn.statusFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = toggle[enabled]}):Play();
+                callback(enabled);
+                popup:new((enabled and "Enabled " or "Disabled ") .. title);
+            end;
+        end;
+    };
+end
 
 function OwlLib.Content:newSlider(title, callback, min, max, startPoint)
     self:Resize(self.bodyFrame);
@@ -375,7 +379,7 @@ function OwlLib.Content:newTextbox(title, callback, presetText, noCallbackOnStar
     end);
 end;
 
-function OwlLib.Content:newBind(title, callback, presetKeyCode)
+function OwlLib.Content:newBind(title, callback, callback2, presetKeyCode)
     self:Resize(self.bodyFrame);
 
     local enabled = false;
@@ -407,11 +411,12 @@ function OwlLib.Content:newBind(title, callback, presetKeyCode)
                 keyCode = input.KeyCode;
                 activated = true;
                 popup:new("Set " .. title .. " to " .. string.upper(tostring(string.char(input.KeyCode.Value))));
+                callback(keyCode)
             end);
 		elseif activated and not listening and input.KeyCode == keyCode then
             enabled = not enabled;
             
-            callback(enabled);
+            callback2(enabled);
         end;
     end);
 
@@ -423,7 +428,7 @@ function OwlLib.Content:newBind(title, callback, presetKeyCode)
     end);
 end;
 
-function OwlLib.Content:newCBind(title, callback, presetKeyCode)
+function OwlLib.Content:newCBind(title, callback, callback2, presetKeyCode)
     self:Resize(self.bodyFrame);
 
     local enabled = false;
@@ -488,13 +493,13 @@ function OwlLib.Content:newCBind(title, callback, presetKeyCode)
     inputService.InputBegan:Connect(function(input, onGui)
         if onGui then return; end;
         if activated and isreallypressed(keyCode, input) then
-            callback(true);
+            callback2(true);
         end;
     end);
     inputService.InputEnded:Connect(function(input, onGui)
         if onGui then return; end;
         if activated and not listening and isreallypressed(keyCode, input) then
-            callback(false);
+            callback2(false);
         end;
     end);    
     btn.bindBtn.MouseButton1Click:Connect(function()
@@ -508,6 +513,7 @@ function OwlLib.Content:newCBind(title, callback, presetKeyCode)
         btn.bindBtn.Text = name
         activated = true;
         popup:new("Set " .. title .. " to " .. (shortNames[input.UserInputType.Name] or input.UserInputType.Name));
+        callback(keyCode)
     end);
 end;
 
